@@ -1,0 +1,20 @@
+{
+    "name": "morkva-vladyslav/database-donor",
+    "description": "Simple tool to migrate database to another database with different tables and columns.",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "DatabaseDonor\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "morkva-vladyslav",
+            "email": "morkva.main@gmail.com"
+        }
+    ],
+    "require": {
+
+    }
+}
