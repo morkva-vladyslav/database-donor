@@ -28,6 +28,7 @@ class Transformer
         'DECIMAL' => 'float',
         'FLOAT' => 'float',
         'DOUBLE' => 'float',
+        'NUMERIC' => 'float',
 
     ];
 
@@ -119,7 +120,93 @@ class Transformer
 
     private static function cast_float_subtype(mixed $value, string $to_type): float
     {
-        return 0.0;
+        if (!is_numeric($value)) throw new \Exception("Value can't be transformed to numeric type.");
+
+        $params = self::get_max_decimal_value($to_type);
+
+        $value = round($value, $params['precision'][1]);
+
+        if ($params['unsigned']) {
+            if ((($params['max_values'][0] > $value)
+                    || ($params['max_values'][1] < $value))
+                && !self::$settings['transform_all'])
+                throw new \Exception('Value out of range');
+
+            $return_value = ($params['max_values'][0] <= $value) && ($value <= $params['max_values'][1]) ? $value : 0;
+        } else {
+            if ($value > $params['max_values'] && !self::$settings['transform_all']) throw new \Exception('Value out of range');
+
+            $return_value = $value > $params['max_values'] ? $params['max_values'] : $value;
+        }
+
+        return $return_value;
+    }
+
+    protected static function get_max_decimal_value($type): array
+    {
+        $type = self::get_decimal_type_with_params($type);
+
+        if(isset($type['type'])) {
+            $str = str_repeat('9',$type['precision'][0] - $type['precision'][1]) . '.' . str_repeat('9', $type['precision'][1]);
+
+            $type['max_values'] = $type['unsigned'] ? floatval($str) : [floatval($str) * -1, floatval($str)];
+        }
+        return $type;
+    }
+
+
+    protected static function get_decimal_type_with_params($type): array
+    {
+        $ret = [
+            'unsigned' => str_contains(strtoupper($type), "UNSIGNED"),
+            'precision' => self::get_decimal_precision_from_type_string($type)
+        ];
+        $type = strtoupper($type);
+        $type_found = false;
+
+        if (str_contains($type, 'DOUBLE'))
+        {
+            $type_found = true;
+            $ret['type'] = 'DOUBLE';
+        }
+
+        if (!$type_found && str_contains($type, 'FLOAT'))
+        {
+            $type_found = true;
+            $ret['type'] = 'FLOAT';
+        }
+
+        if (!$type_found && (str_contains($type, 'DECIMAL') || str_contains($type, 'NUMERIC')))
+        {
+            $ret['type'] = 'DECIMAL';
+        }
+
+        return $ret;
+    }
+
+    protected static function get_decimal_precision_from_type_string($type): array
+    {
+        $ret = [0, 0];
+        $string = ' ' . $type;
+        $ini = strpos($string, '(');
+        if ($ini == 0) {
+            $ret[1] = 10;
+        } else {
+            $ini += strlen('(');
+            $len = strpos($string, ',', $ini) - $ini;
+            $ret[0] = intval(substr($string, $ini, $len));
+        }
+
+        $ini2 = strpos($string, ',');
+        if ($ini2 == 0) {
+            $ret[2] = 0;
+        } else {
+            $ini2 += strlen(',');
+            $len2 = strpos($string, ')', $ini2) - $ini2;
+            $ret[1] = intval(substr($string, $ini2, $len2));
+        }
+
+        return $ret;
     }
 
     /**
@@ -139,13 +226,13 @@ class Transformer
             if ((($max_value[0] > $value) || ($max_value[1] < $value)) && !self::$settings['transform_all']) throw new \Exception('Value out of range');
 
             // TODO: return max or min value for else case
-            $return_value = ($max_value[0] <= $value) && ($value <= $max_value[1]) ? intval($value) : 0;
+            $return_value = ($max_value[0] <= $value) && ($value <= $max_value[1]) ? round(intval($value)) : 0;
 
         } else {
 
             if ($value > $max_value && !self::$settings['transform_all']) throw new \Exception('Value out of range');
 
-            $return_value = $value > $max_value ? $max_value : intval($value);
+            $return_value = $value > $max_value ? $max_value : round(intval($value));
 
         }
 
@@ -259,7 +346,7 @@ class Transformer
      * @param $string
      * @return int
      */
-    protected static function get_char_count_from_char_type($string)
+    protected static function get_char_count_from_char_type($string): int
     {
         $string = ' ' . $string;
         $ini = strpos($string, '(');

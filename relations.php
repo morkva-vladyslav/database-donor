@@ -18,28 +18,25 @@ return [
 
 
     // name of the table that should be filled
-    "patient_table_name" => "catalog_with_dates",
+    "patient_table_name" => "floatstest",
 
     // name of the table from which the values should be taken
-    "donor_table_name" => "CATALOG",
+    "donor_table_name" => "INVFILE",
 
     // relations of columns for inserting
     "columns_relations" => [
 
         // "patient_column_name" => "donor_column_name"
-        'label' => 'LABEL',
-        'startdate' => 'STARTDATE',
-        'enddate' => 'ENDDATE',
-        'ustampdate' => 'USTAMPDATE',
-        'lastupdated' => 'LASTUPDATED',
-        'asentdate' => 'ASENTDATE',
+        'f_poht' => 'F_POHT',
+        'f_pottc' => 'F_POTTC',
+        'f_povat' => 'F_POVAT',
 
     ],
 
     "settings" => [
 
         // stop inserting on first error
-        "stop_on_failure" => true,
+        "stop_on_failure" => false,
 
         // don't import column values to columns where autoincrement exists
         "auto_increment" => true,
