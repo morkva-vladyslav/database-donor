@@ -24,7 +24,7 @@ class Logger
 
     public static function logSQLstm($stm): void
     {
-        $filename = "logs/" . "sql_" .date("Y-m-d h:i:s");
+        $filename = "logs/sql/" .date("Y-m-d h:i:s");
         $file = fopen($filename, "a");
         fwrite($file, date("G:i:s") . ' | ' . $stm . PHP_EOL);
         fclose($file);

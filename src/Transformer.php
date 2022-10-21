@@ -36,17 +36,23 @@ class Transformer
 
     static array $settings;
 
+    /**
+     * @param array $defaults
+     * @return void
+     */
     public static function set_defaults(array $defaults): void
     {
         self::$defaults = $defaults;
     }
 
+    /**
+     * @param array $settings
+     * @return void
+     */
     public static function set_settings(array $settings): void
     {
         self::$settings = $settings;
     }
-
-    protected function __construct() { }
 
     public static function cast(mixed $value, array $needed_desc, array $current_desc): mixed
     {
@@ -78,19 +84,14 @@ class Transformer
                     break;
             }
         } catch (\Exception $e) {
-            Logger::log($e->getMessage());
-            throw new \Exception("Can't transform value.");
+            Logger::log('Transformer Error: ' . $e->getMessage());
+            throw new \Exception("Transformer Error: Can't transform value.");
         }
 
         return self::get_prepared_sql_value($return_value, $needed_desc['Type']);
     }
 
-    /**
-     * @param mixed $value
-     * @param array $to_type
-     * @return string
-     * @throws \Exception
-     */
+
     private static function cast_date_subtype(mixed $value, array $to_type): string
     {
         if ($value === null) {
@@ -154,7 +155,6 @@ class Transformer
         return $type;
     }
 
-
     protected static function get_decimal_type_with_params($type): array
     {
         $ret = [
@@ -209,12 +209,7 @@ class Transformer
         return $ret;
     }
 
-    /**
-     * @param mixed $value
-     * @param string $to_type
-     * @return int
-     * @throws \Exception
-     */
+
     protected static function cast_numeric_subtype(mixed $value, string $to_type): int
     {
         if (!is_numeric($value)) throw new \Exception("Value can't be transformed to numeric type.");
@@ -239,12 +234,7 @@ class Transformer
         return $return_value;
     }
 
-    /**
-     * @param mixed $value
-     * @param string $to_type
-     * @return string
-     * @throws \Exception
-     */
+
     protected static function cast_string_subtype(mixed $value, string $to_type): string
     {
         $max_chars = self::get_max_chars_count($to_type);
@@ -259,11 +249,7 @@ class Transformer
         return self::get_prepared_sql_value($value, $to_type);
     }
 
-    /**
-     * @param mixed $value
-     * @param $needed_type
-     * @return string
-     */
+
     public static function get_prepared_sql_value(mixed $value, $needed_type): string
     {
         return match (self::get_subtype($needed_type)) {
@@ -273,11 +259,7 @@ class Transformer
         };
     }
 
-    /**
-     * Get max chars count for specified string type
-     * @param $type
-     * @return int
-     */
+
     protected static function get_max_chars_count($type): int
     {
         $count = 0;
@@ -300,10 +282,7 @@ class Transformer
         return $count;
     }
 
-    /**
-     * @param $type
-     * @return int|array
-     */
+
     protected static function get_max_numeric_value($type): int|array
     {
         $type = self::get_numeric_type_from_string($type);
@@ -326,11 +305,13 @@ class Transformer
         return 0;
     }
 
+
     /**
+     * Get clear MySQL type from pdo type string
      * @param $type
      * @return string|bool
      */
-    protected static function get_numeric_type_from_string($type): string|bool
+    public static function get_numeric_type_from_string($type): string|bool
     {
         $num_types = ['TINYINT','SMALLINT','MEDIUMINT','INT','BIGINT'];
 
@@ -342,11 +323,11 @@ class Transformer
     }
 
     /**
-     * Get max chars count from VARCHAR or CHAR. Value between "()"
+     * Get maximum string length for CHAR and VARCHAR types. Value in brackets.
      * @param $string
      * @return int
      */
-    protected static function get_char_count_from_char_type($string): int
+    public static function get_char_count_from_char_type($string): int
     {
         $string = ' ' . $string;
         $ini = strpos($string, '(');
@@ -357,8 +338,10 @@ class Transformer
     }
 
     /**
-     * @param string $type1
-     * @param string $type2
+     * Check two values for transform-ability due to settings
+     * @param string $needed_type
+     * @param string $import_type
+     * @param bool $accept_all
      * @return bool
      */
     public static function check(string $needed_type, string $import_type, bool $accept_all): bool
@@ -366,17 +349,6 @@ class Transformer
         // if types are fully identical pass all checks
         if (strtoupper($needed_type) === strtoupper($import_type)) return true;
 
-        // if types can't be cast don't let system proceed
-        if (!self::can_be_casted($needed_type, $import_type, $accept_all))
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static function can_be_casted($needed_type, $import_type, $accept_all): bool
-    {
         if (!self::are_same_subtypes($needed_type, $import_type))
         {
             $needed_subtype = self::get_subtype($needed_type);
@@ -386,7 +358,7 @@ class Transformer
 
             // floats and integers can't be cast to each other without data loss
             if ((($needed_subtype === 'numeric' && $imported_subtype === 'float')
-                || ($imported_subtype === 'numeric' && $needed_subtype === 'float')) && !$accept_all
+                    || ($imported_subtype === 'numeric' && $needed_subtype === 'float')) && !$accept_all
             ) {
                 return false;
             }
@@ -403,20 +375,22 @@ class Transformer
     }
 
     /**
+     * Compare subtypes for MYSQL types
      * @param string $needed_type
      * @param string $import_type
      * @return bool
      */
-    private static function are_same_subtypes(string $needed_type, string $import_type): bool
+    public static function are_same_subtypes(string $needed_type, string $import_type): bool
     {
         return self::get_subtype($needed_type) === self::get_subtype($import_type);
     }
 
     /**
+     * Get subtype from SQL type (varchar(123) => string)
      * @param $haystack
      * @return string|bool
      */
-    private static function get_subtype($haystack): string|bool
+    public static function get_subtype($haystack): string|bool
     {
         foreach (self::$types as $type => $subtype) {
             if (str_contains(strtoupper($haystack), $type)) return $subtype;
@@ -424,12 +398,26 @@ class Transformer
         return false;
     }
 
-    public static function get_undefined_column_value(array $needed_desc)
+    /**
+     * If inserted value is null - check if it can be defaulted (null if it can be NULL)
+     * @param array $needed_desc
+     * @return string
+     */
+    public static function get_undefined_column_value(array $needed_desc): string
     {
         if ($needed_desc['Null'] === 'YES') return 'null';
 
+        // separate brackets-contained string( VARCHAR(123) => VARCHAR )
+        $type = strtoupper(substr($needed_desc['Type'], 0, strpos($needed_desc['Type'], '(')));
+
+        if (isset(self::$defaults[$type])) {
+            return self::get_prepared_sql_value(self::$defaults[$type], $needed_desc['Type']);
+        }
+
         return self::get_prepared_sql_value(self::$defaults[strtoupper($needed_desc['Type'])], $needed_desc['Type']);
     }
+
+    protected function __construct() { }
 
     protected function __clone() { }
 

@@ -38,6 +38,7 @@ try {
     $db_patient->insert_data($db_donor);
 
 } catch (Exception $e) {
+    print_r("Fatal error:" . PHP_EOL . "Exit Process." . PHP_EOL);
     print_r($e->getMessage());
 }
 

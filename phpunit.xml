@@ -1,0 +1,18 @@
+<phpunit bootstrap="vendor/autoload.php">
+    <testsuites>
+        <testsuite name="transformer">
+            <file>tests/TransformerTest.php</file>
+        </testsuite>
+        <testsuite name="logger">
+            <file>tests/LoggerTest.php</file>
+        </testsuite>
+        <testsuite name="database">
+            <file>tests/DatabaseTest.php</file>
+        </testsuite>
+        <testsuite name="all">
+            <file>tests/TransformerTest.php</file>
+            <file>tests/DatabaseTest.php</file>
+            <file>tests/LoggerTest.php</file>
+        </testsuite>
+    </testsuites>
+</phpunit>

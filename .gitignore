@@ -1,5 +1,7 @@
+.idea
+.phpunit.result.cache
 vendor/
 logs/
-.DS_Store
 composer.lock
-.idea
+
+.DS_Store

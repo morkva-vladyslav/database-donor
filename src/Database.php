@@ -134,6 +134,7 @@ class Database
                 $this->needs_to_be_cast[] = $key;
 
                 $message = "Incompatible types for $key and $column_to_compare ($current_type != $compare_type)";
+                $message .= $this->settings['transform_types'] ? " - Will be transformed." : '';
                 Logger::log($message);
                 print_r($message . PHP_EOL);
 
@@ -199,7 +200,7 @@ class Database
                 $stm = $this->pdo->prepare($stm);
                 $stm->execute();
             } catch (\PDOException $e) {
-                Logger::log($e->getMessage());
+                Logger::log('SQL INSERT Error: ' . $e->getMessage() . PHP_EOL . "[ITEM]: " . implode('|', $item_to_insert) . PHP_EOL);
                 if ($this->settings['stop_on_failure']) throw new \PDOException($e->getMessage());
             }
         }
@@ -275,7 +276,7 @@ class Database
                         if ($this->settings['stop_on_failure']) {
                             throw new \Exception($e->getMessage());
                         }
-                        Logger::log($e->getMessage() . " | Column $key, Value: $value;");
+                        Logger::log($e->getMessage() . PHP_EOL . "Column $key, Value: $value;" . PHP_EOL);
                     }
                 } else {
 

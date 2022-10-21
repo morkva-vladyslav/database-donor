@@ -48,3 +48,6 @@ For decimal values (FLOAT, DOUBLE, DECIMAL) value will be defaulted.
 * MULTIPOLYGON
 * ENUM (with differences)
 * SET
+
+
+To run tests use ```./vendor/bin/phpunit tests```
